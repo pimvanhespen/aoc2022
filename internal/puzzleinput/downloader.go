@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	urlFormat      = "https://adventofcode.com/2021/day/%d/input"
+	urlFormat      = "https://adventofcode.com/2022/day/%d/input"
 	filePathFormat = "days/%02d/input.txt"
 )
 

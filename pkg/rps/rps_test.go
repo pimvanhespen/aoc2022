@@ -6,7 +6,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	initHands()
+	initRules()
 
 	code := m.Run()
 
@@ -80,8 +80,8 @@ func TestHand_Outcome(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, err := tt.h.Outcome(tt.args.other); err != nil {
-				t.Errorf("Outcome() error = %v", err)
+			if got, err := tt.h.Play(tt.args.other); err != nil {
+				t.Errorf("Play() error = %v", err)
 			} else if got != tt.want {
 				t.Errorf("outcome() = %v, want %v", got, tt.want)
 			}

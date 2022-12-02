@@ -4,6 +4,11 @@ package rps
 import "fmt"
 
 var (
+	ErrInvalidHand    = newRockPaperScissorsError("invalid hand")
+	ErrInvalidOutcome = newRockPaperScissorsError("invalid outcome")
+)
+
+var (
 	Loss = Outcome{"Loss"}
 	Draw = Outcome{"Draw"}
 	Win  = Outcome{"Win"}
@@ -11,6 +16,14 @@ var (
 
 type Outcome struct {
 	name string
+}
+
+func (o Outcome) String() string {
+	return o.name
+}
+
+func (o Outcome) isZero() bool {
+	return o.name == ""
 }
 
 var (
@@ -23,31 +36,51 @@ type Hand struct {
 	rule *rule
 }
 
-func (h Hand) Outcome(other Hand) (Outcome, error) {
-	return h.rule.outcome(other.rule)
+// Play calculates the outcome of a game of rock-paper-scissors.
+// It returns an error if either hand is invalid.
+func (h Hand) Play(opponent Hand) (Outcome, error) {
+	if h.isInvalid() || opponent.isInvalid() {
+		return Outcome{}, ErrInvalidHand
+	}
+
+	return h.rule.outcome(opponent.rule), nil
 }
 
-// HandForOutcome calculates which hand should be played against the oppnents hand
+func (h Hand) String() string {
+	return h.rule.name
+}
+
+func (h Hand) isInvalid() bool {
+	return h.rule == nil
+}
+
+// HandForOutcome calculates which hand should be played against the opponents hand
 // to get the desired outcome.
 func HandForOutcome(outcome Outcome, opponent Hand) (Hand, error) {
+
+	if opponent.isInvalid() {
+		return Hand{}, ErrInvalidHand
+	}
+
 	switch outcome {
 	case Loss:
-		return ptrToHand(opponent.rule.win)
+		return Hand{opponent.rule.win}, nil
 	case Draw:
-		return ptrToHand(opponent.rule)
+		return Hand{opponent.rule}, nil
 	case Win:
-		return ptrToHand(opponent.rule.loss)
+		return Hand{opponent.rule.loss}, nil
+	default:
+		return Hand{}, ErrInvalidOutcome
 	}
-	return Hand{}, fmt.Errorf("unknown outcome %v", outcome)
 }
 
 // -- Internal --
 
 func init() {
-	initHands()
+	initRules()
 }
 
-func initHands() {
+func initRules() {
 	rockRule.win = scissorsRule
 	rockRule.loss = paperRule
 
@@ -74,29 +107,27 @@ func newRule(name string) *rule {
 	return &rule{name: name}
 }
 
-// Outcome is the outcome for this rule compared to the other rule.
-// 6 on win, 3 on draw, 0 on loss.
-func (h *rule) outcome(other *rule) (Outcome, error) {
+func (h *rule) outcome(other *rule) Outcome {
 	switch other {
 	case h.win:
-		return Win, nil
+		return Win
 	case h:
-		return Draw, nil
+		return Draw
 	case h.loss:
-		return Loss, nil
+		return Loss
+	default:
+		panic(fmt.Sprintf("unknown rule %v", other))
 	}
-
-	return Outcome{}, fmt.Errorf("unknown outcome for %v vs %v", h, other)
 }
 
-func ptrToHand(h *rule) (Hand, error) {
-	switch h {
-	case rockRule:
-		return Rock, nil
-	case paperRule:
-		return Paper, nil
-	case scissorsRule:
-		return Scissors, nil
-	}
-	return Hand{}, fmt.Errorf("unknown rule %v", h)
+type RockPaperScissorsError struct {
+	msg string
+}
+
+func newRockPaperScissorsError(msg string) *RockPaperScissorsError {
+	return &RockPaperScissorsError{msg: msg}
+}
+
+func (e RockPaperScissorsError) Error() string {
+	return e.msg
 }

@@ -167,7 +167,7 @@ func transformA(r inputRow) (inputA, error) {
 
 func strategyA(i inputA) (int, error) {
 
-	outcome, err := i.PlayerHand.Outcome(i.OpponentHand)
+	outcome, err := i.PlayerHand.Play(i.OpponentHand)
 	if err != nil {
 		return 0, err
 	}

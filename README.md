@@ -1,8 +1,7 @@
-# Solutions to Advent of Code 2022
+# Advent of Code 2022 Solutions
 
 This repository contains my solutions to the [Advent of Code 2022](https://adventofcode.com/2022) challenges.
-
-> Please **do not submit these as your own** solutions to the challenges, or share them with others.
+All solutions are written in Go 1.19 using only the standard library.
 
 ## Packages
 
@@ -25,7 +24,7 @@ This repository contains my solutions to the [Advent of Code 2022](https://adven
 To run the solutions, simply run the following command:
 
 ```bash
-go run ./days/XX
+go run ./days/XX/main.go
 ```
 
 Where `XX` is the day number.

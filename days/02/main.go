@@ -1,11 +1,11 @@
 package main
 
 import (
-	"aoc2022/pkg/list"
-	"aoc2022/pkg/puzzleinput"
-	"aoc2022/pkg/rps"
 	"bufio"
 	"fmt"
+	"github.com/pimvanhespen/aoc2022/pkg/list"
+	"github.com/pimvanhespen/aoc2022/pkg/puzzleinput"
+	"github.com/pimvanhespen/aoc2022/pkg/rps"
 	"io"
 )
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"aoc2022/pkg/rps"
+	"github.com/pimvanhespen/aoc2022/pkg/rps"
 	"testing"
 )
 

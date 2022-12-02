@@ -1,8 +1,8 @@
 package main
 
 import (
-	"aoc2022/pkg/puzzleinput"
 	"fmt"
+	"github.com/pimvanhespen/aoc2022/pkg/puzzleinput"
 	"io"
 	"sort"
 	"strconv"

@@ -1,114 +1,37 @@
 package main
 
 import (
+	"aoc2022/days/02/rps"
+	"aoc2022/internal/list"
 	"aoc2022/internal/puzzleinput"
 	"bufio"
 	"fmt"
 	"io"
 )
 
-type Hand int
-
-const (
-	Rock = iota + 1
-	Paper
-	Scissors
-)
-
-type Outcome int
-
-const (
-	Loss = 0
-	Draw = 3
-	Win  = 6
-)
-
-func outcomeFromRune(r rune) Outcome {
-	switch r {
-	case 'X':
-		return Loss
-	case 'Y':
-		return Draw
-	case 'Z':
-		return Win
-	default:
-		panic("unknown outcome")
-	}
-}
-
-// Outcome is the outcome for this hand compared to the other hand.
-// 6 on win
-// 3 on draw
-// 0 on loss
-func (h Hand) Outcome(other Hand) Outcome {
-	if h == other {
-		return Draw
-	}
-
-	if h > other && other != Rock {
-		return Win
-	}
-
-	if h == Rock && other == Scissors {
-		return Win
-	}
-
-	if h == Paper && other == Rock {
-		return Win
-	}
-
-	return Loss
-}
-
-func (h Hand) CalcHandForOutcome(outcome Outcome) Hand {
-	switch outcome {
-	case Loss:
-		switch h {
-		case Rock:
-			return Scissors
-		case Paper:
-			return Rock
-		case Scissors:
-			return Paper
-		}
-	case Draw:
-		return h
-
-	case Win:
-		switch h {
-		case Rock:
-			return Paper
-		case Paper:
-			return Scissors
-		case Scissors:
-			return Rock
-		}
-	}
-	panic("unknown outcome")
-}
-
-type Round struct {
-	Left, Right rune
+type inputRow struct {
+	left, right rune
 }
 
 func main() {
-	input, err := puzzleinput.Get(2)
+
+	in, err := puzzleinput.Get(2)
 	if err != nil {
 		panic(err)
 	}
 
-	invs, err := parseInput(input)
+	invs, err := parseInput(in)
 	if err != nil {
 		panic(err)
 	}
 
-	result1, err := solve1(invs)
+	result1, err := solve(invs, transformA, strategyA)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("Part 1:", result1)
 
-	result2, err := solve2(invs)
+	result2, err := solve(invs, transformB, strategyB)
 	if err != nil {
 		panic(err)
 	}
@@ -116,10 +39,10 @@ func main() {
 
 }
 
-func parseInput(rc io.ReadCloser) ([]Round, error) {
+func parseInput(rc io.ReadCloser) ([]inputRow, error) {
 	defer rc.Close()
 
-	var rounds []Round
+	var rounds []inputRow
 
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
@@ -135,7 +58,7 @@ func parseInput(rc io.ReadCloser) ([]Round, error) {
 			return nil, err
 		}
 
-		rounds = append(rounds, Round{
+		rounds = append(rounds, inputRow{
 			left, right,
 		})
 
@@ -144,45 +67,144 @@ func parseInput(rc io.ReadCloser) ([]Round, error) {
 	return rounds, nil
 }
 
-func handFromRune(left rune) Hand {
-	switch left {
+func parseOutcome(r rune) (rps.Outcome, error) {
+	switch r {
+	case 'X':
+		return rps.Loss, nil
+	case 'Y':
+		return rps.Draw, nil
+	case 'Z':
+		return rps.Win, nil
+	default:
+		return rps.Outcome{}, fmt.Errorf("unknown outcome '%c'", r)
+	}
+}
+
+func parseHand(r rune) (rps.Hand, error) {
+	switch r {
 	case 'A', 'X':
-		return Rock
+		return rps.Rock, nil
 	case 'B', 'Y':
-		return Paper
+		return rps.Paper, nil
 	case 'C', 'Z':
-		return Scissors
+		return rps.Scissors, nil
+	default:
+		return rps.Hand{}, fmt.Errorf("unknown hand '%c'", r)
+	}
+}
+
+func outcomeValue(outcome rps.Outcome) int {
+	switch outcome {
+	case rps.Loss:
+		return 0
+	case rps.Draw:
+		return 3
+	case rps.Win:
+		return 6
+	default:
+		panic("unknown outcome")
+	}
+}
+
+func handValue(hand rps.Hand) int {
+	switch hand {
+	case rps.Rock:
+		return 1
+	case rps.Paper:
+		return 2
+	case rps.Scissors:
+		return 3
 	default:
 		panic("unknown hand")
 	}
 }
 
-func solve1(rounds []Round) (int, error) {
-	var total int
-	for _, round := range rounds {
-		elf, self := handFromRune(round.Left), handFromRune(round.Right)
-		total += int(self) + int(self.Outcome(elf))
+func solve[T any](
+	rows []inputRow,
+	rowToInput func(inputRow) (T, error),
+	strategy func(s T) (int, error)) (int, error) {
+
+	rounds, err := list.TransformErr(rows, rowToInput)
+	if err != nil {
+		return 0, err
 	}
 
-	return total, nil
-}
-
-func solve2(rounds []Round) (int, error) {
 	var total int
 	for _, round := range rounds {
-		result, err := calcRoundScore_Strategy2(round)
-		if err != nil {
-			return 0, err
+		result, solveErr := strategy(round)
+		if solveErr != nil {
+			return 0, solveErr
 		}
 		total += result
 	}
+
 	return total, nil
 }
 
-func calcRoundScore_Strategy2(r Round) (int, error) {
-	elf := handFromRune(r.Left)
-	outcome := outcomeFromRune(r.Right)
-	self := elf.CalcHandForOutcome(outcome)
+// -- solve 1 --
 
-	return int(self) + int(outcome), nil
+type inputA struct {
+	OpponentHand rps.Hand
+	PlayerHand   rps.Hand
+}
+
+func transformA(r inputRow) (inputA, error) {
+	opponentsHand, err := parseHand(r.left)
+	if err != nil {
+		return inputA{}, err
+	}
+	playerHand, err := parseHand(r.right)
+	if err != nil {
+		return inputA{}, err
+	}
+
+	input := inputA{
+		OpponentHand: opponentsHand,
+		PlayerHand:   playerHand,
+	}
+	return input, nil
+}
+
+func strategyA(i inputA) (int, error) {
+
+	outcome, err := i.PlayerHand.Outcome(i.OpponentHand)
+	if err != nil {
+		return 0, err
+	}
+
+	res := outcomeValue(outcome) + handValue(i.PlayerHand)
+	return res, nil
+}
+
+type inputB struct {
+	OpponentHand   rps.Hand
+	DesiredOutcome rps.Outcome
+}
+
+func transformB(r inputRow) (inputB, error) {
+	opponentsHand, err := parseHand(r.left)
+	if err != nil {
+		return inputB{}, err
+	}
+
+	desiredOutcome, err := parseOutcome(r.right)
+	if err != nil {
+		return inputB{}, err
+	}
+
+	input := inputB{
+		OpponentHand:   opponentsHand,
+		DesiredOutcome: desiredOutcome,
+	}
+	return input, nil
+}
+
+func strategyB(i inputB) (int, error) {
+	handToPlay, err := rps.HandForOutcome(i.DesiredOutcome, i.OpponentHand)
+	if err != nil {
+		return 0, err
+	}
+
+	res := outcomeValue(i.DesiredOutcome) + handValue(handToPlay)
+	return res, nil
 }

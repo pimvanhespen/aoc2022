@@ -2,9 +2,15 @@
 
 This repository contains my solutions to the [Advent of Code 2022](https://adventofcode.com/2022) challenges.
 
-## Disclaimer
-Please note that these solutions are not intended to be the most efficient or elegant solutions, but rather my own quick and dirty solutions to get the answers to the challenges.
-Please do not copy these solutions and submit them as your own solutions to the challenges, or share them with others.
+> Please **do not submit these as your own** solutions to the challenges, or share them with others.
+
+## Packages
+
+- Package [days](./days) contains the solutions to the challenges. Each day is a separate package.
+- Package [pkg](./pkg) contains reusable logic fro the challenges.
+  - Package [pkg/rps](./pkg/rps) is a Rock-Paper-Scissors game engine.
+  - Package [pkg/list](./pkg/list) has list transformations helpers.
+  - Package [pkg/puzzleinput](./pkg/puzzleinput) retrieves the puzzle input from the AoC website.
 
 ## Usage
 

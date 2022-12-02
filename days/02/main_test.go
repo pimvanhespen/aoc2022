@@ -1,7 +1,7 @@
 package main
 
 import (
-	"aoc2022/days/02/rps"
+	"aoc2022/pkg/rps"
 	"testing"
 )
 

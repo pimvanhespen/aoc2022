@@ -1,7 +1,7 @@
 package main
 
 import (
-	"aoc2022/internal/puzzleinput"
+	"aoc2022/pkg/puzzleinput"
 	"fmt"
 	"io"
 	"sort"

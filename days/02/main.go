@@ -1,9 +1,9 @@
 package main
 
 import (
-	"aoc2022/days/02/rps"
-	"aoc2022/internal/list"
-	"aoc2022/internal/puzzleinput"
+	"aoc2022/pkg/list"
+	"aoc2022/pkg/puzzleinput"
+	"aoc2022/pkg/rps"
 	"bufio"
 	"fmt"
 	"io"

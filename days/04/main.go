@@ -20,12 +20,23 @@ func main() {
 	}
 
 	fmt.Println("Part 1:", solve1(input))
+	fmt.Println("Part 2:", solve2(input))
 }
 
 func solve1(rows []Row) int {
 	var count int
 	for _, row := range rows {
 		if row.Left.Contains(row.Right) || row.Right.Contains(row.Left) {
+			count++
+		}
+	}
+	return count
+}
+
+func solve2(rows []Row) int {
+	var count int
+	for _, row := range rows {
+		if row.Left.Overlaps(row.Right) {
 			count++
 		}
 	}
@@ -41,7 +52,7 @@ func (r Range) Contains(other Range) bool {
 }
 
 func (r Range) Overlaps(other Range) bool {
-
+	return r.Min <= other.Max && r.Max >= other.Min
 }
 
 type Row struct {

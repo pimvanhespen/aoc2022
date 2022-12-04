@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"github.com/pimvanhespen/aoc2022/pkg/aoc"
 	"github.com/pimvanhespen/aoc2022/pkg/list"
-	"github.com/pimvanhespen/aoc2022/pkg/puzzleinput"
 	"github.com/pimvanhespen/aoc2022/pkg/rps"
-	"io"
 )
 
 type inputRow struct {
@@ -15,12 +13,17 @@ type inputRow struct {
 
 func main() {
 
-	in, err := puzzleinput.Get(2)
+	in, err := aoc.Get(2)
 	if err != nil {
 		panic(err)
 	}
 
-	invs, err := parseInput(in)
+	parser := aoc.Parser[inputRow]{
+		SkipEmptyLines: true,
+		ParseFn:        parseLine,
+	}
+
+	invs, err := parser.Rows(in)
 	if err != nil {
 		panic(err)
 	}
@@ -39,32 +42,15 @@ func main() {
 
 }
 
-func parseInput(rc io.ReadCloser) ([]inputRow, error) {
-	defer rc.Close()
+func parseLine(line string) (inputRow, error) {
+	var input inputRow
 
-	var rounds []inputRow
-
-	scanner := bufio.NewScanner(rc)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
-			continue
-		}
-
-		var left, right rune
-
-		_, err := fmt.Sscanf(line, "%c %c", &left, &right)
-		if err != nil {
-			return nil, err
-		}
-
-		rounds = append(rounds, inputRow{
-			left, right,
-		})
-
+	_, err := fmt.Sscanf(line, "%c %c", &input.left, &input.right)
+	if err != nil {
+		return inputRow{}, err
 	}
 
-	return rounds, nil
+	return input, nil
 }
 
 func parseOutcome(r rune) (rps.Outcome, error) {

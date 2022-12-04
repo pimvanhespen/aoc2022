@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/pimvanhespen/aoc2022/pkg/aoc"
 	"github.com/pimvanhespen/aoc2022/pkg/list"
-	"github.com/pimvanhespen/aoc2022/pkg/puzzleinput"
 	"github.com/pimvanhespen/aoc2022/pkg/set"
 	"io"
 )
 
 func main() {
-	in, err := puzzleinput.Get(3)
+	in, err := aoc.Get(3)
 	if err != nil {
 		panic(err)
 	}

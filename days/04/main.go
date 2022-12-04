@@ -1,46 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"github.com/pimvanhespen/aoc2022/pkg/puzzleinput"
-	"io"
+	"github.com/pimvanhespen/aoc2022/pkg/aoc"
+	"github.com/pimvanhespen/aoc2022/pkg/list"
 )
 
-func main() {
-	rc, err := puzzleinput.Get(4)
-	if err != nil {
-		panic(err)
-	}
-	defer rc.Close()
-
-	input, err := parseInput(rc)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Part 1:", solve1(input))
-	fmt.Println("Part 2:", solve2(input))
-}
-
-func solve1(rows []Row) int {
-	var count int
-	for _, row := range rows {
-		if row.Left.Contains(row.Right) || row.Right.Contains(row.Left) {
-			count++
-		}
-	}
-	return count
-}
-
-func solve2(rows []Row) int {
-	var count int
-	for _, row := range rows {
-		if row.Left.Overlaps(row.Right) {
-			count++
-		}
-	}
-	return count
+type Pair struct {
+	Left, Right Range
 }
 
 type Range struct {
@@ -55,31 +22,43 @@ func (r Range) Overlaps(other Range) bool {
 	return r.Min <= other.Max && r.Max >= other.Min
 }
 
-type Row struct {
-	Left, Right Range
-}
-
-func parseInput(reader io.Reader) ([]Row, error) {
-	scanner := bufio.NewScanner(reader)
-	var rows []Row
-	for scanner.Scan() {
-		line := scanner.Text()
-		row, err := parseLine(line)
-		if err != nil {
-			return nil, err
-		}
-		rows = append(rows, row)
+func main() {
+	rc, err := aoc.Get(4)
+	if err != nil {
+		panic(err)
 	}
-	return rows, nil
+	defer rc.Close()
+
+	p := aoc.Parser[Pair]{
+		SkipEmptyLines: false,
+		ParseFn:        parseLine,
+	}
+
+	rows, err := p.Rows(rc)
+	if err != nil {
+		panic(err)
+	}
+
+	// Part 1
+	engulfing := list.Count(rows, func(p Pair) bool {
+		return p.Left.Contains(p.Right) || p.Right.Contains(p.Left)
+	})
+	fmt.Println("Part 1:", engulfing)
+
+	// Part 2
+	overlapping := list.Count(rows, func(p Pair) bool {
+		return p.Left.Overlaps(p.Right)
+	})
+	fmt.Println("Part 2:", overlapping)
 }
 
-func parseLine(line string) (Row, error) {
+func parseLine(line string) (Pair, error) {
 	const format = "%d-%d,%d-%d"
 
-	var row Row
+	var row Pair
 	_, err := fmt.Sscanf(line, format, &row.Left.Min, &row.Left.Max, &row.Right.Min, &row.Right.Max)
 	if err != nil {
-		return Row{}, err
+		return Pair{}, err
 	}
 	return row, nil
 }

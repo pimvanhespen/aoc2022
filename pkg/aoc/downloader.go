@@ -1,4 +1,4 @@
-package puzzleinput
+package aoc
 
 import (
 	"errors"

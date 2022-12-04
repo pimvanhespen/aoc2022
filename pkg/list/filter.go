@@ -10,3 +10,13 @@ func Filter[In any](ins []In, predicate func(In) bool) []In {
 	}
 	return outs
 }
+
+func Count[In any](ins []In, predicate func(In) bool) int {
+	var count int
+	for _, in := range ins {
+		if predicate(in) {
+			count++
+		}
+	}
+	return count
+}

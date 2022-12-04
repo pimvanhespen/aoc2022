@@ -9,7 +9,7 @@ All solutions are written in Go 1.19 using only the standard library.
 - Package [pkg](./pkg) contains reusable logic fro the challenges.
   - Package [pkg/rps](./pkg/rps) is a Rock-Paper-Scissors game engine.
   - Package [pkg/list](./pkg/list) has list transformations helpers.
-  - Package [pkg/puzzleinput](./pkg/puzzleinput) retrieves the puzzle input from the AoC website.
+  - Package [pkg/puzzleinput](./pkg/aoc) retrieves the puzzle input from the AoC website.
 
 ## Usage
 

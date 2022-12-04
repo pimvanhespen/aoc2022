@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/aoc2022/pkg/puzzleinput"
+	"github.com/pimvanhespen/aoc2022/pkg/aoc"
 	"io"
 	"sort"
 	"strconv"
@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	input, err := puzzleinput.Get(1)
+	input, err := aoc.Get(1)
 	if err != nil {
 		panic(err)
 	}

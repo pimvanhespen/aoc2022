@@ -93,11 +93,11 @@ func parseInput(reader io.Reader) ([][]byte, error) {
 
 	parts := bytes.Split(buff.Bytes(), []byte{'\n'})
 
-	pred := func(b []byte) bool {
+	notEmpty := func(b []byte) bool {
 		return len(b) > 0
 	}
 
-	filtered := list.Filter(parts, pred)
+	filtered := list.Filter(parts, notEmpty)
 	return filtered, nil
 }
 

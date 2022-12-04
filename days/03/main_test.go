@@ -189,7 +189,7 @@ func BenchmarkSolve1(b *testing.B) {
 	b.Run("bytes", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
-			n, _ = solve1_stdlib(bts)
+			n, _ = solve1_noAllocs(bts)
 			total += n
 		}
 	})

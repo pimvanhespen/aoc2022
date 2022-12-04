@@ -8,7 +8,8 @@ import (
 
 var longstring = `LdnrrLnhRdLLmLDRPvmdQnJDJWNqcCqZJZqfFqfcfzcq
 vPTbfWggzvGVqjsVqV
-dDcJHZcZHmMFQQMshsjcRqVChjNtqh`
+dDcJHZcZHmMFQQMshsjcRqVChjNtqh
+`
 
 func Test_solve1_stdlib(t *testing.T) {
 	type args struct {
@@ -42,19 +43,19 @@ func Test_solve1_stdlib(t *testing.T) {
 			args: args{
 				b: []byte(longstring),
 			},
-			want:    2,
+			want:    55,
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := solve1_stdlib(tt.args.b)
+			got, err := solve1_noAllocs(tt.args.b)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("solve1_stdlib() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("solve1_noAllocs() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("solve1_stdlib() got = %v, want %v", got, tt.want)
+				t.Errorf("solve1_noAllocs() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

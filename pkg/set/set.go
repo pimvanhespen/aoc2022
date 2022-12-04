@@ -137,3 +137,11 @@ func (s *Set[Elem]) Clear() {
 		delete(s.m, e)
 	}
 }
+
+func (s *Set[Elem]) Pop() Elem {
+	for e := range s.m {
+		s.Remove(e)
+		return e
+	}
+	panic("set is empty")
+}

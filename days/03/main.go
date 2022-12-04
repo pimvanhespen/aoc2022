@@ -51,7 +51,7 @@ func solve1(rucksacks [][]byte) (int, error) {
 			return 0, errors.New("intersection is not one element")
 		}
 
-		total += value(intersection.ToSlice()[0])
+		total += value(intersection.Pop())
 	}
 
 	return total, nil
@@ -76,7 +76,7 @@ func solve2(rs [][]byte) (int, error) {
 			return 0, errors.New("overlap is not one element")
 		}
 
-		total += value(badge.ToSlice()[0])
+		total += value(badge.Pop())
 	}
 
 	return total, nil

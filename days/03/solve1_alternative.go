@@ -4,6 +4,49 @@ import (
 	"bytes"
 )
 
+// solve1_noAllocs - Pretty proud of this one...
+func solve1_noAllocs(b []byte) (int, error) {
+
+	const newline = '\n'
+
+	var total int
+
+	endOfLine := bytes.IndexByte(b, newline)
+	nextNewLine := endOfLine
+	halfway := endOfLine / 2
+
+	for index := 0; index < len(b); index++ {
+
+		// check if the current character (b[index]) can be found in the second half of the line )b[halfway:nextLine])
+		// if the value of IndexByte is not -1, then the character is found in the second half of the line
+		if bytes.IndexByte(b[halfway:nextNewLine], b[index]) != -1 {
+
+			// found char in next half
+			total += value(b[index])
+
+			// set index to next char after newline
+			index = nextNewLine + 1
+
+			// stop if the index passed the end of the slice
+			if index > len(b)-1 {
+				break
+			}
+
+			// find the next newline
+			endOfLine = bytes.IndexByte(b[index:], newline)
+
+			nextNewLine = index + endOfLine
+			halfway = index + endOfLine/2
+		}
+
+	}
+
+	return total, nil
+}
+
+// here are several iterations of the same function, with different optimizations
+// the afore mentioned "noAllocs" version is the fastest, but it's not very readable
+
 var newline = []byte{'\n'}
 
 func solve1_lowMem(b []byte) (int, error) {
@@ -209,46 +252,6 @@ func solve1_speed(b []byte) (int, error) {
 		if offset >= len(b) {
 			break
 		}
-	}
-
-	return total, nil
-}
-
-func solve1_stdlib(b []byte) (int, error) {
-
-	const newline = '\n'
-
-	var total int
-
-	ni := bytes.IndexByte(b, newline)
-	next := ni
-	half := ni / 2
-
-	for i := 0; i < len(b); i++ {
-		//if i >= half {
-		//
-		//	d := next - half
-		//
-		//	panic(fmt.Sprintf("nomatch found in [%d:%d] %s", i-d, next, string(b[i-d:next])))
-		//}
-
-		if bytes.IndexByte(b[half:next], b[i]) != -1 {
-			// found char in next half
-			total += value(b[i])
-
-			// set index to next char after newline
-			i = next + 1
-
-			if i > len(b) {
-				break
-			}
-
-			ni = bytes.IndexByte(b[i:], newline)
-
-			next = i + ni
-			half = i + ni/2
-		}
-
 	}
 
 	return total, nil

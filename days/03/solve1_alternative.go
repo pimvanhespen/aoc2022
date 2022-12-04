@@ -4,50 +4,8 @@ import (
 	"bytes"
 )
 
-// solve1_noAllocs - Pretty proud of this one...
-func solve1_noAllocs(b []byte) (int, error) {
-
-	const newline = '\n'
-
-	var total int
-
-	endOfLine := bytes.IndexByte(b, newline)
-	nextNewLine := endOfLine
-	halfway := endOfLine / 2
-
-	for index := 0; index < len(b); index++ {
-
-		// check if the current character (b[index]) can be found in the second half of the line )b[halfway:nextLine])
-		// if the value of IndexByte is not -1, then the character is found in the second half of the line
-		if bytes.IndexByte(b[halfway:nextNewLine], b[index]) != -1 {
-
-			// found char in next half
-			total += value(b[index])
-
-			// set index to next char after newline
-			index = nextNewLine + 1
-
-			// stop if the index passed the end of the slice
-			if index > len(b)-1 {
-				break
-			}
-
-			// find the next newline
-			endOfLine = bytes.IndexByte(b[index:], newline)
-
-			nextNewLine = index + endOfLine
-			halfway = index + endOfLine/2
-		}
-
-	}
-
-	return total, nil
-}
-
 // here are several iterations of the same function, with different optimizations
-// the afore mentioned "noAllocs" version is the fastest, but it's not very readable
-
-var newline = []byte{'\n'}
+// the "noAllocs" version is the fastest, but it's not very readable
 
 func solve1_lowMem(b []byte) (int, error) {
 
@@ -252,6 +210,46 @@ func solve1_speed(b []byte) (int, error) {
 		if offset >= len(b) {
 			break
 		}
+	}
+
+	return total, nil
+}
+
+// solve1_noAllocs - Pretty proud of this one...
+func solve1_noAllocs(b []byte) (int, error) {
+
+	const newline = '\n'
+
+	var total int
+
+	endOfLine := bytes.IndexByte(b, newline)
+	nextNewLine := endOfLine
+	halfway := endOfLine / 2
+
+	for index := 0; index < len(b); index++ {
+
+		// check if the current character (b[index]) can be found in the second half of the line )b[halfway:nextLine])
+		// if the value of IndexByte is not -1, then the character is found in the second half of the line
+		if bytes.IndexByte(b[halfway:nextNewLine], b[index]) != -1 {
+
+			// found char in next half
+			total += value(b[index])
+
+			// set index to next char after newlineBytes
+			index = nextNewLine + 1
+
+			// stop if the index passed the end of the slice
+			if index > len(b)-1 {
+				break
+			}
+
+			// find the next newlineBytes
+			endOfLine = bytes.IndexByte(b[index:], newline)
+
+			nextNewLine = index + endOfLine
+			halfway = index + endOfLine/2
+		}
+
 	}
 
 	return total, nil

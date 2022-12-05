@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 const (
@@ -16,10 +17,17 @@ const (
 
 func Get(day int) (io.ReadCloser, error) {
 
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
 	fp := fmt.Sprintf(filePathFormat, day)
 
-	if existsFile(fp) {
-		err := download(day, fp)
+	filepath.Join(wd, fp)
+
+	if !existsFile(fp) {
+		err = download(day, fp)
 		if err != nil {
 			return nil, err
 		}

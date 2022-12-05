@@ -9,12 +9,16 @@ import (
 
 type Stack []byte
 
-func NewStack() *Stack {
-	return &Stack{}
+func NewStack() Stack {
+	return make(Stack, 0)
 }
 
 func (s *Stack) Push(b byte) {
 	*s = append([]byte{b}, *s...)
+}
+
+func (s *Stack) PushMany(crates []byte) {
+	*s = append(crates, *s...)
 }
 
 func (s *Stack) Pop() byte {
@@ -23,12 +27,23 @@ func (s *Stack) Pop() byte {
 	return b
 }
 
-func (s *Stack) Peek() byte {
-	return (*s)[0]
+func (s *Stack) PopMany(amount int) []byte {
+	if amount > len(*s) {
+		panic(fmt.Sprintf("stack out of range [%d]", amount))
+	}
+
+	res := make([]byte, amount)
+	copy(res, (*s)[:amount])
+	*s = (*s)[amount:]
+	return res
 }
 
-func (s *Stack) String() string {
-	return string(*s)
+func (s Stack) Peek() byte {
+	return s[0]
+}
+
+func (s Stack) String() string {
+	return string(s)
 }
 
 func (s Stack) Len() int {
@@ -43,10 +58,20 @@ func (s Stack) PeekIndex(idx int) byte {
 }
 
 type Harbor struct {
-	stacks []*Stack
+	stacks []Stack
 }
 
-func (h *Harbor) String() string {
+func (h Harbor) Copy() Harbor {
+	stacks := make([]Stack, len(h.stacks))
+	for n, s := range h.stacks {
+		cp := make(Stack, len(s))
+		copy(cp, s)
+		stacks[n] = cp
+	}
+	return Harbor{stacks: stacks}
+}
+
+func (h Harbor) String() string {
 	var b strings.Builder
 
 	var max int
@@ -98,7 +123,7 @@ type Instruction struct {
 }
 
 func (i Instruction) String() string {
-	return fmt.Sprintf("move %d from %d to %d", i.Amount, i.From, i.To)
+	return fmt.Sprintf("move %d from %d to %d", i.Amount, i.From+1, i.To+1)
 }
 
 func main() {
@@ -111,25 +136,31 @@ func main() {
 
 	scanner := bufio.NewScanner(rc)
 
-	harbor, err := ParseHarbor(scanner)
+	h1, err := ParseHarbor(scanner)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(harbor)
+
+	h2 := h1.Copy()
 
 	instructions, err := ParseInstructions(scanner)
 	if err != nil {
 		panic(err)
 	}
 
-	part1 := solve1(harbor, instructions)
-	fmt.Print("Part 1:", part1)
+	part1 := solve1(h1, instructions)
+	fmt.Println(h1)
+	fmt.Println("Part 1:", part1)
+
+	part2 := solve2(h2, instructions)
+	fmt.Println(h2)
+	fmt.Println("Part 2:", part2)
 
 	//fmt.Print("Part 2:")
 	//fmt.Println(solve2(rows))
 }
 
-func solve1(harbor *Harbor, instructions []Instruction) string {
+func solve1(harbor Harbor, instructions []Instruction) string {
 
 	var crate byte
 
@@ -139,6 +170,22 @@ func solve1(harbor *Harbor, instructions []Instruction) string {
 			crate = harbor.stacks[ins.From].Pop()
 			harbor.stacks[ins.To].Push(crate)
 		}
+	}
+
+	var b strings.Builder
+
+	for _, stack := range harbor.stacks {
+		b.WriteByte(stack.Peek())
+	}
+
+	return b.String()
+}
+
+func solve2(harbor Harbor, instructions []Instruction) string {
+
+	for _, ins := range instructions {
+		crates := harbor.stacks[ins.From].PopMany(ins.Amount)
+		harbor.stacks[ins.To].PushMany(crates)
 	}
 
 	var b strings.Builder
@@ -161,7 +208,7 @@ func parseStackRow(line string) []byte {
 	return stacks
 }
 
-func ParseHarbor(scanner *bufio.Scanner) (*Harbor, error) {
+func ParseHarbor(scanner *bufio.Scanner) (Harbor, error) {
 
 	var inputs [][]byte
 	var max int
@@ -182,7 +229,7 @@ func ParseHarbor(scanner *bufio.Scanner) (*Harbor, error) {
 	}
 
 	// Create stacks
-	stacks := make([]*Stack, max)
+	stacks := make([]Stack, max)
 	for i := range stacks {
 		stacks[i] = NewStack()
 	}
@@ -197,7 +244,7 @@ func ParseHarbor(scanner *bufio.Scanner) (*Harbor, error) {
 		}
 	}
 
-	return &Harbor{stacks: stacks}, nil
+	return Harbor{stacks: stacks}, nil
 }
 
 func ParseInstructions(scanner *bufio.Scanner) ([]Instruction, error) {

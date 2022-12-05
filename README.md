@@ -8,7 +8,7 @@ All solutions are written in Go 1.19 using only the standard library.
 - Package [days](./days) contains the solutions to the challenges. Each day is a separate package.
 - Package [pkg](./pkg) contains reusable logic fro the challenges.
   - Package [pkg/rps](./pkg/rps) is a Rock-Paper-Scissors game engine.
-  - Package [pkg/list](./pkg/list) has list transformations helpers.
+  - Package [pkg/list](pkg/datastructs/list) has list transformations helpers.
   - Package [pkg/puzzleinput](./pkg/aoc) retrieves the puzzle input from the AoC website.
 
 ## Usage

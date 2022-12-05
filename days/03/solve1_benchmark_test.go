@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/pimvanhespen/aoc2022/pkg/list"
+	"github.com/pimvanhespen/aoc2022/pkg/datastructs/list"
 	"os"
 	"strings"
 	"testing"

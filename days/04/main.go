@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/pimvanhespen/aoc2022/pkg/aoc"
-	"github.com/pimvanhespen/aoc2022/pkg/list"
+	"github.com/pimvanhespen/aoc2022/pkg/datastructs/list"
 )
 
 type Pair struct {

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/pimvanhespen/aoc2022/pkg/aoc"
-	"github.com/pimvanhespen/aoc2022/pkg/list"
-	"github.com/pimvanhespen/aoc2022/pkg/set"
+	"github.com/pimvanhespen/aoc2022/pkg/datastructs/list"
+	"github.com/pimvanhespen/aoc2022/pkg/datastructs/set"
 	"io"
 )
 

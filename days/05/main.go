@@ -4,69 +4,18 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/pimvanhespen/aoc2022/pkg/aoc"
+	"github.com/pimvanhespen/aoc2022/pkg/datastructs/stack"
 	"strings"
 )
 
-type Stack []byte
-
-func NewStack() Stack {
-	return make(Stack, 0)
-}
-
-func (s *Stack) Push(b byte) {
-	*s = append([]byte{b}, *s...)
-}
-
-func (s *Stack) PushMany(crates []byte) {
-	*s = append(crates, *s...)
-}
-
-func (s *Stack) Pop() byte {
-	b := (*s)[0]
-	*s = (*s)[1:]
-	return b
-}
-
-func (s *Stack) PopMany(amount int) []byte {
-	if amount > len(*s) {
-		panic(fmt.Sprintf("stack out of range [%d]", amount))
-	}
-
-	res := make([]byte, amount)
-	copy(res, (*s)[:amount])
-	*s = (*s)[amount:]
-	return res
-}
-
-func (s Stack) Peek() byte {
-	return s[0]
-}
-
-func (s Stack) String() string {
-	return string(s)
-}
-
-func (s Stack) Len() int {
-	return len(s)
-}
-
-func (s Stack) PeekIndex(idx int) byte {
-	if idx >= len(s) {
-		panic(fmt.Sprintf("index [%d] out of range", idx))
-	}
-	return s[idx]
-}
-
 type Harbor struct {
-	stacks []Stack
+	stacks []stack.Stack[byte]
 }
 
 func (h Harbor) Copy() Harbor {
-	stacks := make([]Stack, len(h.stacks))
+	stacks := make([]stack.Stack[byte], len(h.stacks))
 	for n, s := range h.stacks {
-		cp := make(Stack, len(s))
-		copy(cp, s)
-		stacks[n] = cp
+		stacks[n] = s.Copy()
 	}
 	return Harbor{stacks: stacks}
 }
@@ -95,7 +44,7 @@ func (h Harbor) String() string {
 
 			rev := s.Len() - 1 - idx
 
-			c = s.PeekIndex(rev)
+			c = s.PeekAt(rev)
 			_, _ = fmt.Fprintf(&b, "[%c] ", c)
 		}
 
@@ -108,10 +57,6 @@ func (h Harbor) String() string {
 		b.Write([]byte{' ', '1' + byte(i), ' ', ' '})
 	}
 	b.WriteByte('\n')
-
-	//for idx, st := range h.stacks {
-	//	_, _ = fmt.Fprintf(&b, "%2d: %s\n", idx, st)
-	//}
 
 	return b.String()
 }
@@ -141,23 +86,16 @@ func main() {
 		panic(err)
 	}
 
-	h2 := h1.Copy()
-
 	instructions, err := ParseInstructions(scanner)
 	if err != nil {
 		panic(err)
 	}
 
-	part1 := solve1(h1, instructions)
-	fmt.Println(h1)
+	part1 := solve1(h1.Copy(), instructions)
 	fmt.Println("Part 1:", part1)
 
-	part2 := solve2(h2, instructions)
-	fmt.Println(h2)
+	part2 := solve2(h1.Copy(), instructions)
 	fmt.Println("Part 2:", part2)
-
-	//fmt.Print("Part 2:")
-	//fmt.Println(solve2(rows))
 }
 
 func solve1(harbor Harbor, instructions []Instruction) string {
@@ -183,9 +121,19 @@ func solve1(harbor Harbor, instructions []Instruction) string {
 
 func solve2(harbor Harbor, instructions []Instruction) string {
 
+	var crates []byte
+
 	for _, ins := range instructions {
-		crates := harbor.stacks[ins.From].PopMany(ins.Amount)
-		harbor.stacks[ins.To].PushMany(crates)
+
+		for i := 0; i < ins.Amount; i++ {
+			crates = append(crates, harbor.stacks[ins.From].Pop())
+		}
+
+		for i := ins.Amount - 1; i >= 0; i-- {
+			harbor.stacks[ins.To].Push(crates[i])
+		}
+
+		crates = crates[:0] // Clear slice, but preserve capacity (memory)
 	}
 
 	var b strings.Builder
@@ -229,9 +177,9 @@ func ParseHarbor(scanner *bufio.Scanner) (Harbor, error) {
 	}
 
 	// Create stacks
-	stacks := make([]Stack, max)
+	stacks := make([]stack.Stack[byte], max)
 	for i := range stacks {
-		stacks[i] = NewStack()
+		stacks[i] = stack.New[byte]()
 	}
 
 	// Fill stacks bottom up

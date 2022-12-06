@@ -1,0 +1,14 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/pimvanhespen/aoc2022/days/06
+BenchmarkSolve1
+BenchmarkSolve1/loop_->bytes.Index
+BenchmarkSolve1/loop_->bytes.Index-8         	   62266	     19067 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSolve1/loop_->_map[byte]int
+BenchmarkSolve1/loop_->_map[byte]int-8       	   10000	    103324 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSolve2
+BenchmarkSolve2/loop_->bytes.Index
+BenchmarkSolve2/loop_->bytes.Index-8         	   23914	     48983 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSolve2/loop_->map[byte]int
+BenchmarkSolve2/loop_->map[byte]int-8        	    2827	    420774 ns/op	     706 B/op	       6 allocs/op
+PASS

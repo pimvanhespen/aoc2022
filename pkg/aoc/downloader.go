@@ -1,10 +1,8 @@
 package aoc
 
 import (
-	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,7 +36,7 @@ func Get(day int) (io.ReadCloser, error) {
 
 func existsFile(path string) bool {
 	_, err := os.Stat(path)
-	return !errors.Is(err, fs.ErrExist)
+	return err == nil
 }
 
 func getCookie() (_ string, err error) {

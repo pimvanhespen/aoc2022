@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 var testIn = `$ cd /
 $ ls
@@ -28,7 +31,11 @@ $ ls
 
 func TestSolve1(t *testing.T) {
 	want := 95437
-	got := solve1(testIn)
+	root, err := parse(strings.NewReader(testIn))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := solve1(root)
 	if got != want {
 		t.Errorf("got %d, want %d", got, want)
 	}

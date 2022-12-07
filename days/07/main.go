@@ -73,6 +73,13 @@ func (d *Directory) NestedString(level int) string {
 	return sb.String()
 }
 
+func (d *Directory) Walk(f func(d *Directory)) {
+	f(d)
+	for _, dir := range d.dirs {
+		dir.Walk(f)
+	}
+}
+
 type File struct {
 	name string
 	size int
@@ -117,6 +124,9 @@ func main() {
 
 	fmt.Print("Part 1: ")
 	fmt.Println(solve1(root))
+
+	r2 := solve2(root)
+	fmt.Println("Part 2: ", r2)
 }
 
 func parse(reader io.Reader) (*Directory, error) {
@@ -212,4 +222,28 @@ func countSubdirs(d *Directory) int {
 		t += countSubdirs(dir)
 	}
 	return t
+}
+
+func solve2(root *Directory) int {
+	const max = 70_000_000
+	const req = 30_000_000
+
+	available := max - root.Size()
+
+	required := req - available
+
+	fmt.Println("max       ", max)
+	fmt.Println("used      ", root.Size())
+	fmt.Println("available ", available)
+	fmt.Println("required   ", required)
+
+	smallest := root.Size()
+	root.Walk(func(d *Directory) {
+		size := d.Size()
+		if size < smallest && size >= required {
+			smallest = size
+		}
+	})
+
+	return smallest
 }

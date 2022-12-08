@@ -8,13 +8,12 @@ import (
 )
 
 func main() {
-	rc, err := aoc.Get(6)
+	r, err := aoc.Get(6)
 	if err != nil {
 		panic(err)
 	}
-	defer rc.Close()
 
-	bts, err := io.ReadAll(rc)
+	bts, err := io.ReadAll(r)
 	if err != nil {
 		panic(err)
 	}

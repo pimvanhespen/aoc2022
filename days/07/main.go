@@ -2,18 +2,18 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"github.com/pimvanhespen/aoc2022/pkg/aoc"
 	"io"
+	"strconv"
 	"strings"
 )
 
 type Directory struct {
-	parent *Directory
 	name   string
+	parent *Directory
 	files  []*File
-	dirs   []*Directory
+	subs   []*Directory
 }
 
 func NewDirectory(name string) *Directory {
@@ -27,7 +27,7 @@ func (d *Directory) AddFile(f *File) {
 }
 
 func (d *Directory) AddDirectory(dir *Directory) {
-	d.dirs = append(d.dirs, dir)
+	d.subs = append(d.subs, dir)
 }
 
 func (d *Directory) Size() int {
@@ -35,25 +35,14 @@ func (d *Directory) Size() int {
 	for _, f := range d.files {
 		size += f.Size()
 	}
-	for _, dir := range d.dirs {
+	for _, dir := range d.subs {
 		size += dir.Size()
 	}
 	return size
 }
 
-func (d *Directory) String() string {
-	return fmt.Sprintf("%s (%d)", d.name, d.Size())
-}
-
-func (d *Directory) Path() string {
-	if d.parent == nil {
-		return d.name
-	}
-	return d.parent.Path() + "/" + d.name
-}
-
-func (d *Directory) GetDir(s string) (*Directory, error) {
-	for _, dir := range d.dirs {
+func (d *Directory) GetNamedSubDir(s string) (*Directory, error) {
+	for _, dir := range d.subs {
 		if dir.name == s {
 			return dir, nil
 		}
@@ -61,21 +50,9 @@ func (d *Directory) GetDir(s string) (*Directory, error) {
 	return nil, fmt.Errorf("directory %s not found", s)
 }
 
-func (d *Directory) NestedString(level int) string {
-	var sb strings.Builder
-	_, _ = fmt.Fprintf(&sb, "%s%s (%d)\n", strings.Repeat("  ", level), d.name, d.Size())
-	for _, f := range d.files {
-		_, _ = fmt.Fprintf(&sb, "%s%s (%d)\n", strings.Repeat("  ", level+1), f.name, f.size)
-	}
-	for _, dir := range d.dirs {
-		sb.WriteString(dir.NestedString(level + 1))
-	}
-	return sb.String()
-}
-
 func (d *Directory) Walk(f func(d *Directory)) {
 	f(d)
-	for _, dir := range d.dirs {
+	for _, dir := range d.subs {
 		dir.Walk(f)
 	}
 }
@@ -96,107 +73,71 @@ func (f *File) Size() int {
 	return f.size
 }
 
-type Line string
-
-func (l Line) IsCommand() bool {
-	return strings.HasPrefix(string(l), "$ ")
-}
-
-func (l Line) IsDirectory() bool {
-	return strings.HasPrefix(string(l), "dir ")
-}
-
-func (l Line) IsFile() bool {
-	return !l.IsCommand() && !l.IsDirectory()
-}
-
 func main() {
 	rc, err := aoc.Get(7)
 	if err != nil {
 		panic(err)
 	}
-	defer rc.Close()
 
 	root, err := parse(rc)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Print("Part 1: ")
-	fmt.Println(solve1(root))
-
-	r2 := solve2(root)
-	fmt.Println("Part 2: ", r2)
+	fmt.Println("Part 1:", solve1(root))
+	fmt.Println("Part 2:", solve2(root))
 }
 
 func parse(reader io.Reader) (*Directory, error) {
 
-	var currentDir *Directory
-	var lineNr int
+	currentDir := NewDirectory("/")
 
 	scanner := bufio.NewScanner(reader)
+	scanner.Scan() // skip first line (root directory)
+
 	for scanner.Scan() {
-		lineNr++
 		text := scanner.Text()
 		if text == "" {
 			break
 		}
 
-		line := Line(text)
+		parts := strings.Split(text, " ")
 
-		s := fmt.Sprintf("%3d: `%s`  F? %t - D? %t - C? %t\n", lineNr-1, line, line.IsFile(), line.IsDirectory(), line.IsCommand())
-		fmt.Print(s)
-
-		switch {
-		case line.IsDirectory():
-			d := NewDirectory(text[4:])
-			d.parent = currentDir
-			currentDir.AddDirectory(d)
-
-			fmt.Printf("add dir `%s` to `%s`\n", d.name, currentDir.Path())
-
-		case line.IsFile():
-			var size int
-			var name string
-			_, err := fmt.Sscanf(text, "%d %s", &size, &name)
-			if err != nil {
-				return nil, fmt.Errorf("could not parse file at line %d: %w", lineNr-1, err)
+		// commands
+		if parts[0] == "$" {
+			// $ ls
+			if parts[1] == "ls" {
+				continue
 			}
-			currentDir.AddFile(NewFile(name, size))
 
-			fmt.Printf("add file `%s` (%d) to %s\n", name, size, currentDir.Path())
-
-		case line.IsCommand():
-			if strings.HasPrefix(text, "$ cd ..") {
-				if currentDir.parent == nil {
-					return nil, errors.New("cannot go up from root")
-				}
+			// $ cd ..
+			if parts[2] == ".." {
 				currentDir = currentDir.parent
-				fmt.Printf("moved up to `%s`\n", currentDir.Path())
 				continue
 			}
 
-			if strings.HasPrefix(text, "$ ls") {
-				continue
+			// $ cd <dir>
+			d, err := currentDir.GetNamedSubDir(parts[2])
+			if err != nil {
+				return nil, fmt.Errorf("line `%s`: %w", text, err)
 			}
-
-			if strings.HasPrefix(text, "$ cd ") {
-
-				if currentDir == nil && strings.HasSuffix(text, "/") {
-					currentDir = NewDirectory("/")
-					continue
-				}
-
-				d, err := currentDir.GetDir(text[5:])
-				if err != nil {
-					return nil, fmt.Errorf("could not find directory %s: %w", text[5:], err)
-				}
-
-				currentDir = d
-				fmt.Printf("moved to dir `%s`\n", currentDir.Path())
-
-			}
+			currentDir = d
+			continue
 		}
+
+		if parts[0] == "dir" {
+			dir := NewDirectory(parts[1])
+			dir.parent = currentDir
+			currentDir.AddDirectory(dir)
+			continue
+		}
+
+		// directory contents
+		n, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("line `%s`: %w", text, err)
+		}
+		currentDir.AddFile(NewFile(parts[1], int(n)))
 	}
 
 	for currentDir.parent != nil {
@@ -207,43 +148,30 @@ func parse(reader io.Reader) (*Directory, error) {
 }
 
 func solve1(root *Directory) int {
-	return countSubdirs(root)
-}
 
-func countSubdirs(d *Directory) int {
+	var count int
 
-	var t int
-
-	if d.Size() < 100_000 {
-		t += d.Size()
-	}
-
-	for _, dir := range d.dirs {
-		t += countSubdirs(dir)
-	}
-	return t
-}
-
-func solve2(root *Directory) int {
-	const max = 70_000_000
-	const req = 30_000_000
-
-	available := max - root.Size()
-
-	required := req - available
-
-	fmt.Println("max       ", max)
-	fmt.Println("used      ", root.Size())
-	fmt.Println("available ", available)
-	fmt.Println("required   ", required)
-
-	smallest := root.Size()
 	root.Walk(func(d *Directory) {
 		size := d.Size()
-		if size < smallest && size >= required {
-			smallest = size
+		if size < 100_000 {
+			count += size
 		}
 	})
 
-	return smallest
+	return count
+}
+
+func solve2(root *Directory) int {
+	minimumSizeToFree := root.Size() - 40_000_000 // max is 70M, min is 30M, so root may be 40M at max.
+
+	sizeOfSmallestApplicableDirectory := root.Size()
+	root.Walk(func(d *Directory) {
+		sizeOfCurrentDirectory := d.Size()
+
+		if sizeOfCurrentDirectory < sizeOfSmallestApplicableDirectory && sizeOfCurrentDirectory >= minimumSizeToFree {
+			sizeOfSmallestApplicableDirectory = sizeOfCurrentDirectory
+		}
+	})
+
+	return sizeOfSmallestApplicableDirectory
 }

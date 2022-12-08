@@ -15,7 +15,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer in.Close()
 
 	rows, err := parseInput(in)
 	if err != nil {

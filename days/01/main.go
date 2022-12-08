@@ -71,15 +71,8 @@ func (i Elf) Calories() int {
 	return i.calories
 }
 
-func parseInput(closer io.ReadCloser) (_ []Elf, err error) {
-	defer func() {
-		cerr := closer.Close()
-		if err == nil {
-			err = cerr
-		}
-	}()
-
-	b, err := io.ReadAll(closer)
+func parseInput(reader io.Reader) (_ []Elf, err error) {
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}

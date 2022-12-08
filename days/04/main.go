@@ -27,7 +27,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer rc.Close()
 
 	p := aoc.Parser[Pair]{
 		SkipEmptyLines: false,

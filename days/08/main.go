@@ -8,13 +8,12 @@ import (
 )
 
 func main() {
-	rc, err := aoc.Get(8)
+	r, err := aoc.Get(8)
 	if err != nil {
 		panic(err)
 	}
-	defer rc.Close()
 
-	field, err := parse(rc)
+	field, err := parse(r)
 	if err != nil {
 		panic(err)
 	}

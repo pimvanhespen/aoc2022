@@ -13,7 +13,7 @@ const (
 	filePathFormat = "days/%02d/input.txt"
 )
 
-func Get(day int) (io.ReadCloser, error) {
+func Get(day int) (io.Reader, error) {
 
 	wd, err := os.Getwd()
 	if err != nil {
@@ -22,7 +22,7 @@ func Get(day int) (io.ReadCloser, error) {
 
 	fp := fmt.Sprintf(filePathFormat, day)
 
-	filepath.Join(wd, fp)
+	fp = filepath.Join(wd, fp)
 
 	if !existsFile(fp) {
 		err = download(day, fp)
@@ -31,22 +31,28 @@ func Get(day int) (io.ReadCloser, error) {
 		}
 	}
 
-	return os.Open(fp)
-}
+	reader, writer := io.Pipe()
+	go func() {
 
-func GetBytes(day int) (_ []byte, err error) {
-	rc, err := Get(day)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if cerr := rc.Close(); err == nil {
-			err = cerr
+		file, openErr := os.Open(fp)
+		if openErr != nil {
+			_ = writer.CloseWithError(openErr)
+			return
 		}
+		defer func() {
+			_ = file.Close()
+		}()
+
+		_, cErr := io.Copy(writer, file)
+		if cErr != nil {
+			_ = writer.CloseWithError(cErr)
+			return
+		}
+
+		_ = writer.Close()
 	}()
 
-	return io.ReadAll(rc)
+	return reader, nil
 }
 
 func existsFile(path string) bool {

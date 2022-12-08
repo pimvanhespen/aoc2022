@@ -34,6 +34,21 @@ func Get(day int) (io.ReadCloser, error) {
 	return os.Open(fp)
 }
 
+func GetBytes(day int) (_ []byte, err error) {
+	rc, err := Get(day)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if cerr := rc.Close(); err == nil {
+			err = cerr
+		}
+	}()
+
+	return io.ReadAll(rc)
+}
+
 func existsFile(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil

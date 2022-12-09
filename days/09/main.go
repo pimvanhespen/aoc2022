@@ -41,11 +41,9 @@ type Move struct {
 	Steps     int
 }
 
-type Input []Move
+func parse(reader io.Reader) ([]Move, error) {
 
-func parse(reader io.Reader) (Input, error) {
-
-	var input Input
+	var input []Move
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
@@ -138,15 +136,15 @@ func Follow(position, target Vector) Vector {
 	return position // no move
 }
 
-func solve1(input Input) int {
+func solve1(input []Move) int {
 	return solve(input, 2)
 }
 
-func solve2(input Input) int {
+func solve2(input []Move) int {
 	return solve(input, 10)
 }
 
-func solve(input Input, knots int) int {
+func solve(input []Move, knots int) int {
 
 	//tailMoves := make(map[Vector]struct{}) // tail moves <- used in original solution
 
@@ -193,6 +191,23 @@ func solve(input Input, knots int) int {
 	})
 
 	return len(visited[len(visited)-1])
+}
+
+func limit(n int) int {
+	if n < 0 {
+		return -1
+	}
+	if n > 0 {
+		return 1
+	}
+	return 0
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 //														//
@@ -318,39 +333,6 @@ func createImage(history []map[Vector]struct{}) image.Image {
 	}
 
 	return img
-}
-
-func reduceRGB(c color.Color, f float64) color.Color {
-	_, _, _, a := c.RGBA()
-	return blendColors(c, color.RGBA{0, 0, 0, uint8(a / 0xFF)}, f)
-}
-
-func reduceAlpha(c color.Color, f float64) color.Color {
-	r, g, b, a := c.RGBA()
-
-	return color.RGBA{
-		R: uint8(r / 0xff),
-		G: uint8(g / 0xff),
-		B: uint8(b / 0xff),
-		A: uint8(float64(a/0xff) * f),
-	}
-}
-
-func limit(n int) int {
-	if n < 0 {
-		return -1
-	}
-	if n > 0 {
-		return 1
-	}
-	return 0
-}
-
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
 }
 
 func max(a, b int) int {

@@ -103,7 +103,7 @@ func solve1(harbor Harbor, instructions []Instruction) string {
 	var crate byte
 
 	for _, ins := range instructions {
-		// Move from top of stack
+		// Follow from top of stack
 		for i := 0; i < ins.Amount; i++ {
 			crate = harbor.stacks[ins.From].Pop()
 			harbor.stacks[ins.To].Push(crate)

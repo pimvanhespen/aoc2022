@@ -61,7 +61,14 @@ func existsFile(path string) bool {
 }
 
 func getCookie() (_ string, err error) {
-	f, err := os.Open("cookie.txt")
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	fp := filepath.Join(wd, "cookie.txt")
+
+	f, err := os.Open(fp)
 	if err != nil {
 		return "", err
 	}

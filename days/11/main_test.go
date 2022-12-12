@@ -40,7 +40,7 @@ func TestSolve2(t *testing.T) {
 	}
 
 	const want = 2713310158
-	got := solve2(m, 10_000, func(i int) int {
+	got := simulate(m, 10_000, func(i int) int {
 		return i / 2
 	})
 	if got != want {

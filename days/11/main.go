@@ -28,8 +28,8 @@ func main() {
 		monkey.Reset()
 	}
 
-	part2 := solve2(monkeys, 10_000, func(i int) int {
-		return i / 2
+	part2 := simulate(monkeys, 10_000, func(i int) int {
+		return i % 9699690
 	})
 	fmt.Println("Part 2:", part2)
 }
@@ -78,10 +78,10 @@ func (m Monkey) String() string {
 
 func solve1(monkeys []*Monkey, rounds int) int {
 	worryFn := func(i int) int { return i / 3 }
-	return solve2(monkeys, rounds, worryFn)
+	return simulate(monkeys, rounds, worryFn)
 }
 
-func solve2(monkeys []*Monkey, rounds int, worryFn func(int) int) int {
+func simulate(monkeys []*Monkey, rounds int, worryFn func(int) int) int {
 
 	for i := 0; i < rounds; i++ {
 		for _, m := range monkeys {
@@ -126,6 +126,8 @@ func div(a, b int) int {
 func parse(reader io.Reader) ([]*Monkey, error) {
 
 	var monkeys []*Monkey
+
+	combined := 1
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
@@ -188,6 +190,9 @@ func parse(reader io.Reader) ([]*Monkey, error) {
 		if divisor == 0 {
 			return nil, fmt.Errorf("divisor is 0! '%s'", text)
 		}
+
+		combined *= divisor
+
 		var whenTrue, whenFalse int
 		scanner.Scan()
 		text = scanner.Text()
@@ -207,5 +212,6 @@ func parse(reader io.Reader) ([]*Monkey, error) {
 		monkeys = append(monkeys, &monkey)
 		scanner.Scan() // skip next line
 	}
+	fmt.Println("combined:", combined)
 	return monkeys, nil
 }

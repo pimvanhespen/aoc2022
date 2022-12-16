@@ -1,5 +1,9 @@
 package set
 
+import (
+	"fmt"
+)
+
 type Set[Elem comparable] struct {
 	m map[Elem]struct{}
 }
@@ -144,4 +148,27 @@ func (s *Set[Elem]) Pop() Elem {
 		return e
 	}
 	panic("set is empty")
+}
+
+func (s *Set[Elem]) Filter(fn func(e Elem) (keep bool)) *Set[Elem] {
+	res := New[Elem]()
+	for e := range s.m {
+		if fn(e) {
+			res.Add(e)
+		}
+	}
+	return res
+}
+
+func (s *Set[Elem]) String() string {
+	return fmt.Sprintf("%v", s.ToSlice())
+}
+
+func (s *Set[Elem]) ContainsAny(other *Set[Elem]) bool {
+	for e := range s.m {
+		if _, ok := other.m[e]; ok {
+			return true
+		}
+	}
+	return false
 }

@@ -142,6 +142,7 @@ func (s *Set[Elem]) Clear() {
 	}
 }
 
+// Pop removes and returns an arbitrary element from the set.
 func (s *Set[Elem]) Pop() Elem {
 	for e := range s.m {
 		s.Remove(e)
@@ -150,6 +151,7 @@ func (s *Set[Elem]) Pop() Elem {
 	panic("set is empty")
 }
 
+// Filter returns a new set containing all elements that satisfy the predicate.
 func (s *Set[Elem]) Filter(fn func(e Elem) (keep bool)) *Set[Elem] {
 	res := New[Elem]()
 	for e := range s.m {
@@ -160,10 +162,21 @@ func (s *Set[Elem]) Filter(fn func(e Elem) (keep bool)) *Set[Elem] {
 	return res
 }
 
+// FilterInPlace removes all elements from the given set that do not satisfy the predicate.
+func (s *Set[Elem]) FilterInPlace(fn func(e Elem) (keep bool)) {
+	for e := range s.m {
+		if !fn(e) {
+			delete(s.m, e)
+		}
+	}
+}
+
+// String returns a string representation of the set.
 func (s *Set[Elem]) String() string {
 	return fmt.Sprintf("%v", s.ToSlice())
 }
 
+// ContainsAny returns true if the set contains any of the elements of the `other` set.
 func (s *Set[Elem]) ContainsAny(other *Set[Elem]) bool {
 	for e := range s.m {
 		if _, ok := other.m[e]; ok {

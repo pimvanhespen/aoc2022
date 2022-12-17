@@ -19,8 +19,31 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Part 1:", solve1(input, 2022))
-	fmt.Println("Part 2:", solve2(input))
+	heights := solve2(input, 2022)
+	fmt.Println("Part 1:", heights[0])
+
+	const rocks = 1000000000000
+
+	initialRocks, initialHeight := 1729, 2666    // measured by hand from the output of part 1
+	rockerPerCycle, heightPerCycle := 1740, 2681 // measured by hand from the output of part 1
+
+	resultHeight := initialHeight
+
+	fullCycles := (rocks - initialRocks) / rockerPerCycle
+
+	resultHeight += fullCycles * heightPerCycle
+
+	remainingRocks := (rocks - initialRocks) % rockerPerCycle
+
+	vals := solve2(input, initialRocks+remainingRocks)
+	fmt.Println(vals)
+
+	diffH := vals[0] - initialHeight
+	fmt.Println("diffH", diffH)
+
+	resultHeight += diffH
+
+	fmt.Println("Part 2:", resultHeight)
 
 }
 
@@ -330,6 +353,8 @@ func solve1(input Jets, blocks int) int {
 
 	mover := NewMover(input)
 
+	heights := make([]int, blocks)
+
 	for i := 0; i < blocks; i++ {
 		shape := shapes[i%len(shapes)]
 		position := defaultOffset.Add(0, field.height)
@@ -337,6 +362,7 @@ func solve1(input Jets, blocks int) int {
 
 		for {
 			move, isHorizontal := mover.Next()
+
 			next := position.Add(move.X, move.Y)
 
 			if field.CanMove(shape, next) {
@@ -344,21 +370,73 @@ func solve1(input Jets, blocks int) int {
 			} else if !isHorizontal {
 				break
 			}
-
-			//c := field.Copy()
-			//c.Add(shape, position)
-			//fmt.Println(c)
 		}
 
 		field.Add(shape, position)
-		//fmt.Println(field)
+		heights[i] = field.height
 	}
 
 	return field.height
 }
 
-func solve2(input Jets) int {
-	return -1
+func solve2(input Jets, blocks int) []int {
+	field := Field{
+		width:  7,
+		blocks: make([]Block, 0, blocks),
+	}
+
+	defaultOffset := Vec2{
+		X: 2,
+		Y: 3,
+	}
+
+	mover := NewMover(input)
+
+	heights := make([]int, blocks)
+
+	var cycle int
+	var lastFallen int
+	var lastHeight int
+
+	iFallen, iHeight := 0, 0
+	rps, hps := 0, 0
+
+	for i := 0; i < blocks; i++ {
+		shape := shapes[i%len(shapes)]
+		position := defaultOffset.Add(0, field.height)
+		mover.Reset()
+
+		for {
+			move, isHorizontal := mover.Next()
+
+			if mover.offset%len(mover.stream) == 0 && cycle%2 == 0 {
+				rps = len(field.blocks) - lastFallen
+				hps = field.height - lastHeight
+				if cycle == 0 {
+					iFallen, iHeight = rps, hps
+				}
+				fmt.Println("CYCLE", cycle)
+				fmt.Println(rps, hps)
+
+				lastHeight = field.height
+				lastFallen = len(field.blocks)
+				cycle++
+			}
+
+			next := position.Add(move.X, move.Y)
+
+			if field.CanMove(shape, next) {
+				position = next
+			} else if !isHorizontal {
+				break
+			}
+		}
+
+		field.Add(shape, position)
+		heights[i] = field.height
+	}
+
+	return []int{field.height, iFallen, iHeight, rps, hps}
 }
 
 func min(a, b int) int {
@@ -374,5 +452,3 @@ func max(a, b int) int {
 	}
 	return b
 }
-
-var blocks = 1_000_000_000_000

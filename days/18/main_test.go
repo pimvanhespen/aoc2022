@@ -28,3 +28,13 @@ func TestSolve1(t *testing.T) {
 		t.Errorf("solve1(%v) = %d, want %d", v, got, want)
 	}
 }
+
+func TestSolve2(t *testing.T) {
+	v, err := parse(strings.NewReader(testInput))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := solve2(v), 58; got != want {
+		t.Errorf("solve2(%v) = %d, want %d", v, got, want)
+	}
+}

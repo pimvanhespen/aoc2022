@@ -21,7 +21,7 @@ func TestSolve1(t *testing.T) {
 		t.Log(b)
 	}
 
-	if got, want := solve1(bps), 32; sum(got) != want {
+	if got, want := solve1(bps), 33; got != want {
 		t.Errorf("got %d, want %d", got, want)
 	}
 }
@@ -32,13 +32,7 @@ func TestBlueprint_Simulate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	initialState := State{
-		Turns:  32,
-		Stock:  Resources{},
-		Robots: Resources{Ore: 1},
-	}
-
-	if got, want := bps[0].Simulate(initialState, 40), 56; got.Stock.Geode != want {
+	if got, want := bps[0].Simulate(32), 56; got.Stock.Geode != want {
 		t.Errorf("got %d, want %d", got.Stock.Geode, want)
 	}
 
@@ -54,7 +48,7 @@ func TestBlueprint_Simulate2(t *testing.T) {
 		Stock:  Resources{},
 		Robots: Resources{Ore: 1},
 	}
-	if got, want := bps[1].Simulate(initialState, 47), 62; got.Stock.Geode != want {
+	if got, want := bps[1].simulate(initialState, 47), 62; got.Stock.Geode != want {
 		t.Errorf("got %d, want %d", got, want)
 	}
 }
@@ -73,7 +67,7 @@ func TestSolve2(t *testing.T) {
 		bps = bps[:3]
 	}
 
-	if got, want := solve2(bps, 22, 32), 62*56; got != want {
+	if got, want := solve2(bps, 32), 62*56; got != want {
 		t.Errorf("got %d, want %d", got, want)
 	}
 }
@@ -172,73 +166,8 @@ func TestState_Next(t *testing.T) {
 				Stock:  tt.fields.Stock,
 				Robots: tt.fields.Robots,
 			}
-			if got := s.Wait(tt.args.wait).Next(tt.args.cost, tt.args.addRobot); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Next() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNext(t *testing.T) {
-	type args struct {
-		resources Resources
-		increment Resources
-		required  Resources
-	}
-	tests := []struct {
-		name  string
-		args  args
-		want  int
-		want1 bool
-	}{
-		{
-			name: "1 ore robot",
-			args: args{
-				resources: Resources{Ore: 4},
-				increment: Resources{Ore: 1},
-				required:  Resources{Ore: 4},
-			},
-			want:  0,
-			want1: true,
-		}, {
-			name: "1 clay robot",
-			args: args{
-				resources: Resources{Ore: 2, Clay: 1},
-				increment: Resources{Clay: 1},
-				required:  Resources{Ore: 2, Clay: 2},
-			},
-			want:  1,
-			want1: true,
-		},
-		{
-			name: "1 obsidian robot",
-			args: args{
-				resources: Resources{Ore: 3, Clay: 14},
-				increment: Resources{Obsidian: 1},
-				required:  Resources{Ore: 3, Clay: 14, Obsidian: 3},
-			},
-			want:  4,
-			want1: true,
-		},
-		{
-			name: "1 ore robot",
-			args: args{
-				resources: Resources{Ore: 0},
-				increment: Resources{Ore: 2},
-				required:  Resources{Ore: 3},
-			},
-			want:  2,
-			want1: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := Next(tt.args.resources, tt.args.increment, tt.args.required)
-			if got != tt.want {
-				t.Errorf("Next() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("Next() got1 = %v, want %v", got1, tt.want1)
+			if got := s.buyAfter(tt.args.wait, tt.args.cost, tt.args.addRobot); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Buy() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -55,6 +55,15 @@ func Get(day int) (io.Reader, error) {
 	return reader, nil
 }
 
+func Load[Result any](day int, parseFunc func(io.Reader) (Result, error)) (Result, error) {
+	r, err := Get(day)
+	if err != nil {
+		return *new(Result), err
+	}
+
+	return parseFunc(r)
+}
+
 func existsFile(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil

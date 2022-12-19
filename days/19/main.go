@@ -4,35 +4,26 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/pimvanhespen/aoc2022/pkg/aoc"
+	"github.com/pimvanhespen/aoc2022/pkg/datastructs/list"
 	"io"
-	"log"
-	"sync"
 	"time"
 )
 
 func main() {
-	r, err := aoc.Get(19)
+	blueprints, err := aoc.Load(19, parse)
 	if err != nil {
 		panic(err)
 	}
-
-	blueprints, err := parse(r)
-	if err != nil {
-		panic(err)
-	}
-
-	var start time.Time
-	var lap time.Duration
 
 	// Part 1
-	start = time.Now()
+	start := time.Now()
 	res := solve1(blueprints)
-	lap = time.Since(start)
-	fmt.Println("Part 1:", sum(res), "in", lap)
+	lap := time.Since(start)
+	fmt.Println("Part 1:", res, "in", lap)
 
 	// Part 2
 	start = time.Now()
-	res2 := solve2(blueprints[:3], 24, 32)
+	res2 := solve2(blueprints[:3])
 	lap = time.Since(start)
 	fmt.Println("Part 2:", res2, "in", lap)
 
@@ -40,28 +31,30 @@ func main() {
 
 func parse(reader io.Reader) ([]Blueprint, error) {
 	const format = `Blueprint %d: Each ore robot costs %d ore. Each clay robot costs %d ore. Each obsidian robot costs %d ore and %d clay. Each geode robot costs %d ore and %d obsidian.`
-	var nr, ore, clayOre, obsidianOre, obsidianClay, geodeOre, geodeObsidian int
+	var nr, oreOre, clayOre, obsidianOre, obsidianClay, geodeOre, geodeObsidian int
 	var blueprints []Blueprint
+
 	scanner := bufio.NewScanner(reader)
+
 	for scanner.Scan() {
 		text := scanner.Text()
 		if text == "" {
 			continue
 		}
 
-		_, err := fmt.Sscanf(text, format, &nr, &ore, &clayOre, &obsidianOre, &obsidianClay, &geodeOre, &geodeObsidian)
+		_, err := fmt.Sscanf(text, format, &nr, &oreOre, &clayOre, &obsidianOre, &obsidianClay, &geodeOre, &geodeObsidian)
 		if err != nil {
 			return nil, err
 		}
 
 		blueprints = append(blueprints, Blueprint{
 			ID:       nr,
-			Ore:      Resources{Ore: ore},
+			Ore:      Resources{Ore: oreOre},
 			Clay:     Resources{Ore: clayOre},
 			Obsidian: Resources{Ore: obsidianOre, Clay: obsidianClay},
 			Geode:    Resources{Ore: geodeOre, Obsidian: geodeObsidian},
 			Max: Resources{
-				Ore:      maxs(ore, clayOre, obsidianOre, geodeOre),
+				Ore:      max(oreOre, max(clayOre, max(obsidianOre, geodeOre))),
 				Clay:     obsidianClay,
 				Obsidian: geodeObsidian,
 			},
@@ -71,68 +64,26 @@ func parse(reader io.Reader) ([]Blueprint, error) {
 	return blueprints, nil
 }
 
-func solve1(blueprints []Blueprint) []int {
-	const turns = 24
+func solve1(blueprints []Blueprint) int {
 
-	var scores []int
+	states := list.TransformParallel(blueprints, func(b Blueprint) State {
+		return b.Simulate(24)
+	})
 
-	for _, b := range blueprints {
-		s := State{
-			Turns:  turns,
-			Stock:  Resources{Ore: 0},
-			Robots: Resources{Ore: 1},
-		}
-		// we always first build 1 ore robot.. so we can skip those turns, the reduces the number of turns we need to simulate
-		// from 4^24 == 2.8*10^14 to 1.7*10^13
-		// 1.7*10^13 is still too much, so we need to optimize the simulation
-		best := b.Simulate(s, 0)
-		fmt.Printf("Blueprint %d: %d\n", b.ID, best.Stock.Geode)
-		fmt.Println(best)
-		scores = append(scores, b.ID*best.Stock.Geode)
-	}
-
-	return scores
+	return list.ReduceIndex(states, 0, func(initial int, cur State, index int) int {
+		return initial + (index+1)*cur.Stock.Geode
+	})
 }
 
-func solve2(blueprints []Blueprint, begin, turns int) int {
+func solve2(blueprints []Blueprint) int {
 
-	scores := make(chan State, 3)
+	states := list.TransformParallel(blueprints, func(b Blueprint) State {
+		return b.Simulate(32)
+	})
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(blueprints))
-	log.Println("start")
-	for _, b := range blueprints {
-		go func(b Blueprint) {
-			defer wg.Done()
-			var best State
-			for i := begin; i <= turns; i += 2 {
-				initial := State{
-					Turns:  i,
-					Stock:  Resources{Ore: 0},
-					Robots: Resources{Ore: 1},
-				}
-
-				best = b.Simulate(initial, best.Stock.Geode)
-				log.Printf("Blueprint %d: %d (%d)\n", b.ID, best.Stock.Geode, i)
-
-			}
-			log.Printf("Blueprint %d: %d (%d)\n", b.ID, best.Stock.Geode, turns)
-			scores <- best
-		}(b)
-	}
-
-	go func() {
-		wg.Wait()
-		close(scores)
-	}()
-
-	total := 1
-	for s := range scores {
-		log.Println("Scored:", s.Stock.Geode)
-		total *= s.Stock.Geode
-	}
-
-	return total
+	return list.Reduce(states, 1, func(initial int, cur State) int {
+		return initial * cur.Stock.Geode
+	})
 }
 
 type Resources struct {
@@ -157,17 +108,17 @@ func (r Resources) Subtract(o Resources) Resources {
 	}
 }
 
-func (r Resources) Multiply(i int) Resources {
+func (r Resources) MultiplyN(n int) Resources {
 	return Resources{
-		Ore:      r.Ore * i,
-		Clay:     r.Clay * i,
-		Obsidian: r.Obsidian * i,
-		Geode:    r.Geode * i,
+		Ore:      r.Ore * n,
+		Clay:     r.Clay * n,
+		Obsidian: r.Obsidian * n,
+		Geode:    r.Geode * n,
 	}
 }
 
 func (r Resources) String() string {
-	const format = "Ore: %d, Cly: %d, Obs: %d, Geo: %d"
+	const format = "%2d Ore, %2d Cly, %2d Obs, %2d Geo"
 	return fmt.Sprintf(format, r.Ore, r.Clay, r.Obsidian, r.Geode)
 }
 
@@ -180,16 +131,24 @@ type Blueprint struct {
 	Max      Resources
 }
 
-func (b Blueprint) String() string {
-	return fmt.Sprintf("Blueprint{Ore:%v, Clay:%v, Obsidian:%v, Geode:%v}", b.Ore, b.Clay, b.Obsidian, b.Geode)
+func (b Blueprint) Simulate(turns int) State {
+	var best State
+
+	for i := 1; i <= turns; i++ {
+		start := State{
+			Turns: i,
+			Robots: Resources{
+				Ore: 1,
+			},
+		}
+		best = b.simulate(start, best.Stock.Geode)
+	}
+
+	return best
 }
 
-func (b Blueprint) cutoffRobots(r Resources) bool {
-	return r.Ore > b.Max.Ore || r.Clay > b.Max.Clay || r.Obsidian > b.Max.Obsidian
-}
-
-func (b Blueprint) Simulate(s State, highscore int) State {
-	if cutoff(s.Stock.Geode, s.Robots.Geode, s.Turns, highscore) {
+func (b Blueprint) simulate(s State, highScore int) State {
+	if s.PredictScore() < highScore {
 		return s // we can't get a higher score
 	}
 
@@ -202,59 +161,50 @@ func (b Blueprint) Simulate(s State, highscore int) State {
 		return s.Wait(s.Turns)
 	}
 
-	states := make([]State, 0, 4)
-	//states[0] = s.Wait(s.Turns)
+	// The worst 'best' we can get is doing nothing for the rest of the game
+	best := s.Wait(s.Turns)
+
+	eval := func(newState State) {
+		if newState.Turns < 0 {
+			return
+		}
+		bestBranch := b.simulate(newState, highScore)
+		if bestBranch.Stock.Geode > best.Stock.Geode {
+			best = bestBranch
+		}
+	}
 
 	// try to build a Geode robot
-	if wait, ok := Next(s.Stock, s.Robots, b.Geode); ok {
-		ns := s.Wait(wait).Next(b.Geode, Resources{Geode: 1})
-		if ns.Turns >= 0 {
-			states = append(states, ns)
+	if newState, ok := s.BuyASAP(b.Geode, Resources{Geode: 1}); ok {
+		eval(newState)
+	}
+
+	// try to build an Obsidian robot, if we are not at max capacity
+	if s.Robots.Obsidian < b.Max.Obsidian {
+		if newState, ok := s.BuyASAP(b.Obsidian, Resources{Obsidian: 1}); ok {
+			eval(newState)
 		}
 	}
 
-	// try to build an Obsidian robot, if we do not exceed the max
-	if s.Robots.Obsidian+1 <= b.Max.Obsidian {
-		if wait, ok := Next(s.Stock, s.Robots, b.Obsidian); ok {
-			ns := s.Wait(wait).Next(b.Obsidian, Resources{Obsidian: 1})
-			if ns.Turns >= 0 {
-				states = append(states, ns)
-			}
+	//	try to build a Clay robot, if we are not at max capacity
+	if s.Robots.Clay < b.Max.Clay {
+		if newState, ok := s.BuyASAP(b.Clay, Resources{Clay: 1}); ok {
+			eval(newState)
 		}
 	}
 
-	//	try to build a Clay robot, if we do not exceed the max
-	if s.Robots.Clay+1 <= b.Max.Clay {
-		if wait, ok := Next(s.Stock, s.Robots, b.Clay); ok {
-			ns := s.Wait(wait).Next(b.Clay, Resources{Clay: 1})
-			if ns.Turns >= 0 {
-				states = append(states, ns)
-			}
+	// try to build an Ore robot, if we are not at max capacity
+	if s.Robots.Ore < b.Max.Ore {
+		if newState, ok := s.BuyASAP(b.Ore, Resources{Ore: 1}); ok {
+			eval(newState)
 		}
 	}
 
-	// try to build an Ore robot, if we do not exceed the max
-	if s.Robots.Ore+1 <= b.Max.Ore {
-		if wait, ok := Next(s.Stock, s.Robots, b.Ore); ok {
-			ns := s.Wait(wait).Next(b.Ore, Resources{Ore: 1})
-			if ns.Turns >= 0 {
-				states = append(states, ns)
-			}
-		}
-	}
-
-	if len(states) == 0 {
-		return s.Wait(s.Turns)
-	}
-
-	var best State
-	for _, ns := range states {
-		res := b.Simulate(ns, highscore)
-		if res.Stock.Geode > best.Stock.Geode {
-			best = res
-		}
-	}
 	return best
+}
+
+func (b Blueprint) String() string {
+	return fmt.Sprintf("Blueprint{Ore:%v, Clay:%v, Obsidian:%v, Geode:%v}", b.Ore, b.Clay, b.Obsidian, b.Geode)
 }
 
 type State struct {
@@ -263,82 +213,70 @@ type State struct {
 	Robots Resources
 }
 
-func (s State) String() string {
-	return fmt.Sprintf("State{Turns:%d, Stock:%v, Robots:%v}", s.Turns, s.Stock, s.Robots)
-}
-
-func (s State) Next(cost, addRobot Resources) State {
-	return State{
-		Turns:  s.Turns - 1, // wait + build
-		Stock:  s.Stock.Add(s.Robots).Subtract(cost),
-		Robots: s.Robots.Add(addRobot),
+func (s State) BuyASAP(cost, get Resources) (State, bool) {
+	wait, ok := s.minutesUntilPurchasePossible(cost)
+	if !ok {
+		return s, false
 	}
+	return s.buyAfter(wait, cost, get), true
 }
 
 func (s State) Wait(turns int) State {
 	return State{
 		Turns:  s.Turns - turns,
-		Stock:  s.Stock.Add(s.Robots.Multiply(turns)),
+		Stock:  s.Stock.Add(s.Robots.MultiplyN(turns)),
 		Robots: s.Robots,
 	}
 }
 
-func Next(resources, increment, required Resources) (int, bool) {
-	var wait int
-	if required.Ore > resources.Ore {
-		if increment.Ore == 0 {
-			return 0, false
-		}
-		wait = max(wait, ceil(abs(required.Ore-resources.Ore), increment.Ore))
-	}
-	if required.Clay > resources.Clay {
-		if increment.Clay == 0 {
-			return 0, false
-		}
-		wait = max(wait, ceil(abs(resources.Clay-required.Clay), increment.Clay))
-	}
-	if required.Obsidian > resources.Obsidian {
-		if increment.Obsidian == 0 {
-			return 0, false
-		}
-		wait = max(wait, ceil(abs(resources.Obsidian-required.Obsidian), increment.Obsidian))
-	}
-	if required.Geode > resources.Geode {
-		if increment.Geode == 0 {
-			return 0, false
-		}
-		wait = max(wait, ceil(abs(resources.Geode-required.Geode), increment.Geode))
-	}
-
-	return wait, true
+func (s State) PredictScore() int {
+	return s.Stock.Geode + s.Robots.Geode*s.Turns + s.Turns*(s.Turns-1)/2
 }
 
-func cutoff(stock, geodeRobots, turnsRemaining, highscore int) bool {
-
-	stock += turnsRemaining * geodeRobots
-	turnsRemaining -= 1
-	stock += (turnsRemaining * (turnsRemaining + 1)) / 2
-
-	return stock < highscore
+func (s State) String() string {
+	return fmt.Sprintf("State{Turns:%d, Stock:%v, Robots:%v}", s.Turns, s.Stock, s.Robots)
 }
 
-func sum(ints []int) int {
-	var s int
-	for _, i := range ints {
-		s += i
+func (s State) minutesUntilPurchasePossible(cost Resources) (int, bool) {
+	ore, ok := calcWait(cost.Ore, s.Stock.Ore, s.Robots.Ore)
+	if !ok {
+		return 0, false
 	}
-	return s
-}
-
-func abs(i int) int {
-	if i < 0 {
-		return -i
+	clay, ok := calcWait(cost.Clay, s.Stock.Clay, s.Robots.Clay)
+	if !ok {
+		return 0, false
 	}
-	return i
+	obsidian, ok := calcWait(cost.Obsidian, s.Stock.Obsidian, s.Robots.Obsidian)
+	if !ok {
+		return 0, false
+	}
+	geode, ok := calcWait(cost.Geode, s.Stock.Geode, s.Robots.Geode)
+	if !ok {
+		return 0, false
+	}
+
+	return max(ore, max(clay, max(obsidian, geode))), true
 }
 
-func ceil(a, b int) int {
-	return (a + b - 1) / b
+func (s State) buyAfter(turns int, cost, newRobot Resources) State {
+	return State{
+		Turns:  s.Turns - turns - 1, // wait + build
+		Stock:  s.Stock.Add(s.Robots.MultiplyN(turns + 1)).Subtract(cost),
+		Robots: s.Robots.Add(newRobot),
+	}
+}
+
+func calcWait(req, got, inc int) (int, bool) {
+	if req <= got {
+		return 0, true
+	}
+	if inc == 0 {
+		return 0, false
+	}
+	req -= got
+	//		 v math.Ceil for integers
+	ceil := (req + inc - 1) / inc
+	return ceil, true
 }
 
 func max(a, b int) int {
@@ -346,27 +284,4 @@ func max(a, b int) int {
 		return a
 	}
 	return b
-}
-
-func maxs(i ...int) int {
-	m := i[0]
-	for _, j := range i[1:] {
-		m = max(m, j)
-	}
-	return m
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func mins(ints ...int) int {
-	low := ints[0]
-	for _, i := range ints[1:] {
-		low = min(low, i)
-	}
-	return low
 }

@@ -210,14 +210,14 @@ func BenchmarkSolve1(b *testing.B) {
 
 	var total int
 
-	b.Run("loop ->bytes.Index", func(b *testing.B) {
+	b.Run("loop->bytes.Index", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			total += solve1(input)
 		}
 	})
 
-	b.Run("loop -> map[byte]int", func(b *testing.B) {
+	b.Run("loop->map[byte]int", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			total += solve_map(input, 4)
@@ -242,14 +242,14 @@ func BenchmarkSolve2(b *testing.B) {
 
 	var total int
 
-	b.Run("loop ->bytes.Index", func(b *testing.B) {
+	b.Run("loop->bytes.Index", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			total += solve2(input)
 		}
 	})
 
-	b.Run("loop ->map[byte]int", func(b *testing.B) {
+	b.Run("loop->map[byte]int", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			total += solve_map(input, 14)

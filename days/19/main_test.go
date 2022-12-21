@@ -67,7 +67,7 @@ func TestSolve2(t *testing.T) {
 		bps = bps[:3]
 	}
 
-	if got, want := solve2(bps, 32), 62*56; got != want {
+	if got, want := solve2(bps), 62*56; got != want {
 		t.Errorf("got %d, want %d", got, want)
 	}
 }

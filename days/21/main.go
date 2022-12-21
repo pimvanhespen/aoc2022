@@ -110,8 +110,6 @@ func (m MathNode) Value() int {
 		return m.Left.Value() - m.Right.Value()
 	case '/':
 		return m.Left.Value() / m.Right.Value()
-	case '=':
-		return m.Left.Value() - m.Right.Value()
 	}
 
 	panic(fmt.Sprintf("invalid op: %q", m.Op))
@@ -195,7 +193,6 @@ func solve2(input []Row) int {
 	if !ok {
 		panic("root not found")
 	}
-	root.Op = '='
 
 	// find branch leading to human
 	human, ok := nodes["humn"]
@@ -203,77 +200,34 @@ func solve2(input []Row) int {
 		panic("human not found")
 	}
 
-	path := recursive(nodes["root"], human, nil)
+	path := recursive(root, human, nil)
 	if path == nil {
 		panic("no path found")
 	}
 
-	var toMatch int
-	if path[1] == root.Right {
-		toMatch = root.Left.Value()
-	} else if path[1] == root.Left {
-		toMatch = root.Right.Value()
-	} else {
-		panic("invalid path")
+	var required int
+
+	for idx, node := range path[:len(path)-1] {
+
+		var opposite int
+
+		isLeft := node.Left == path[idx+1] // +1 for child, +1 for begin offset of path
+		if isLeft {
+			opposite = node.Right.Value()
+		} else {
+			opposite = node.Left.Value()
+		}
+
+		if idx == 0 {
+			// set initial required value to equal whatever the root node has on the opposite side
+			required = opposite
+			continue
+		}
+
+		required = reverse(required, node.Op, opposite, isLeft)
 	}
 
-	fmt.Println("to match:", toMatch)
-	for idx, node := range path[1 : len(path)-1] {
-
-		var nonPath *MathNode
-
-		isLeft := node.Left == path[idx+2]
-
-		if isLeft {
-			nonPath = node.Right
-		} else {
-			nonPath = node.Left
-		}
-
-		oppositeValue := nonPath.Value()
-
-		matcher := reverse(toMatch, node.Op, oppositeValue, isLeft)
-
-		tmp := &MathNode{
-			Name:    "tmp",
-			value:   matcher,
-			isValue: true,
-		}
-
-		var old *MathNode
-
-		if isLeft {
-			old = node.Left
-			node.Left = tmp
-		} else {
-			old = node.Right
-			node.Right = tmp
-		}
-
-		fmt.Printf("%s: (M) %15d %c %-15d = %15d ", node.Name, matcher, node.Op, nonPath.Value(), toMatch)
-		if v := root.Value(); v >= 1 || v <= -1 {
-			fmt.Println("NOK! ", v)
-			panic("invalid")
-		}
-		fmt.Println("(OK)", root.Value())
-
-		if isLeft {
-			node.Left = old
-		} else {
-			node.Right = old
-		}
-
-		toMatch = matcher
-	}
-
-	human.value = toMatch
-
-	left, right := root.Left.Value(), root.Right.Value()
-	if left-right == 0 {
-		return int(human.Value())
-	}
-
-	panic("no solution found")
+	return required
 }
 
 func reverse(sum int, op rune, value int, isLeft bool) int {

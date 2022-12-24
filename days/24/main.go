@@ -9,6 +9,7 @@ import (
 	"io"
 )
 
+// Valley represents the valley with blizzards
 type Valley struct {
 	Width      int
 	Height     int
@@ -16,6 +17,7 @@ type Valley struct {
 	Vertical   *set.Set[State]
 }
 
+// IsValid returns true if the given state is valid (e.g. not on a wall / blizzard)
 func (v Valley) IsValid(s State) bool {
 	if s.Position.X < 0 || s.Position.X >= v.Width {
 		return false
@@ -37,6 +39,7 @@ func (v Valley) IsValid(s State) bool {
 	return !(v.Vertical.Contains(vstate) || v.Horizontal.Contains(hstate))
 }
 
+// bytes returns the bytes of the valley at the given minute
 func (v Valley) bytes(minute int) [][]byte {
 	bs := make([][]byte, v.Height+2)
 	for i := range bs {
@@ -77,20 +80,24 @@ func (v Valley) bytes(minute int) [][]byte {
 	return bs
 }
 
+// StringWhen returns the string representation of the valley at the given minute
 func (v Valley) StringWhen(i int) interface{} {
 	return string(bytes.Join(v.bytes(i), []byte{'\n'}))
 }
 
+// State represents a position at a moment in time
 type State struct {
 	Minute   int
 	Position Vector2D
 }
 
+// Equals returns true if the given state is equal to the current state
 func (s State) Equals(o State) bool {
 	return s == o
 }
 
-func (s State) Options() []State {
+// Moves returns all possible moves from the current state
+func (s State) Moves() []State {
 	return []State{
 		{1 + s.Minute, s.Position}, // wait
 		{1 + s.Minute, s.Position.Add(North)},
@@ -100,10 +107,12 @@ func (s State) Options() []State {
 	}
 }
 
+// Vector2D represents a (x,y)-coordinate
 type Vector2D struct {
 	X, Y int
 }
 
+// NewVector2D returns a new Vector2D
 func NewVector2D(x, y int) Vector2D {
 	return Vector2D{
 		X: x,
@@ -111,14 +120,17 @@ func NewVector2D(x, y int) Vector2D {
 	}
 }
 
+// Add returns the sum of the current vector and the given vector
 func (v Vector2D) Add(o Vector2D) Vector2D {
 	return NewVector2D(v.X+o.X, v.Y+o.Y)
 }
 
+// Distance returns the Manhattan distance between the current vector and the given vector
 func (v Vector2D) Distance(position Vector2D) int {
 	return absDiff(v.X, position.X) + absDiff(v.Y, position.Y)
 }
 
+// absDiff the difference between two integers (absolute)
 func absDiff(a, b int) int {
 	if a > b {
 		return a - b
@@ -217,6 +229,8 @@ func solve1(valley Valley) int {
 	}
 
 	seen := set.New[State]()
+
+	// create a new priority queue
 	q := queue.NewPriority[State]()
 	q.Insert(start, 0)
 
@@ -224,19 +238,27 @@ func solve1(valley Valley) int {
 	// stop when we reach the finish
 	for q.Len() > 0 {
 
+		// get the most promising state
 		current := q.Pop()
 
+		// check if we have reached the end
 		if current.Position == finish {
 			return current.Minute
 		}
 
-		for _, move := range current.Options() {
-			// ignore invalid moves, and moves we've already seen
+		// we are not at the end, so we need to find all possible moves for the current position
+		for _, move := range current.Moves() {
+
+			// ignore moves that are not possible, or have been seen before
 			if (!valley.IsValid(move)) || seen.Contains(move) {
 				continue
 			}
 
+			// register the move as seen
 			seen.Add(move)
+
+			// calculate the priority of the move and insert into the priority queue
+			// the moves with the highest priority are the ones that are closest to the finish
 			q.Insert(move, current.Minute+finish.Distance(move.Position))
 		}
 	}

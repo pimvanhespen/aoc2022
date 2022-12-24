@@ -13,14 +13,29 @@ const testInput = `#.######
 #<^v^^>#
 ######.#`
 
+var r = strings.NewReplacer(">", "@",
+	"<", "@",
+	"^", "@",
+	"v", "@",
+	"2", "@",
+	"3", "@",
+	"4", "@",
+	"5", "@",
+	"6", "@",
+	"7", "@",
+	"8", "@",
+	"9", "@")
+
 func TestParse(t *testing.T) {
 	valley, err := parse(strings.NewReader(testInput))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got := valley.String()
-	if got != testInput {
+	expect := r.Replace(testInput)
+
+	got := valley.StringWhen(0)
+	if got != expect {
 		t.Errorf("Expected\n%s\ngot\n%s\n", testInput, got)
 	}
 }
@@ -40,11 +55,11 @@ func TestValley_Next(t *testing.T) {
 	rows := bytes.Split([]byte(example), []byte{'\n'})
 
 	for i := 0; i < len(rows); i += 8 {
-		valley = valley.Next()
-		got := valley.String()
+		got := valley.StringWhen(i / 8) // ignore the initial state
 
 		want := string(bytes.Join(rows[i+1:i+7], []byte{'\n'}))
 		want = strings.Replace(want, "E", ".", -1)
+		want = r.Replace(want)
 
 		if got != want {
 			t.Errorf("Expected\n%s\ngot\n%s\n", want, got)
@@ -65,7 +80,15 @@ func TestSolve1(t *testing.T) {
 	}
 }
 
-var example = `Minute 1, move down:
+var example = `Initial state:
+#E######
+#>>.<^<#
+#.<..<<#
+#>v.><>#
+#<^v^^>#
+######.#
+
+Minute 1, move down:
 #.######
 #E>3.<.#
 #<..<<.#

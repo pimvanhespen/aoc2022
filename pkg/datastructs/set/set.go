@@ -185,3 +185,9 @@ func (s *Set[Elem]) ContainsAny(other *Set[Elem]) bool {
 	}
 	return false
 }
+
+func (s *Set[Elem]) AddMany(elems ...Elem) {
+	for _, e := range elems {
+		s.Add(e)
+	}
+}

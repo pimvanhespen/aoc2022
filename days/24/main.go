@@ -87,6 +87,7 @@ func (v Valley) StringWhen(i int) interface{} {
 
 // State represents a position at a moment in time
 type State struct {
+	Prev     *State
 	Minute   int
 	Position Vector2D
 }
@@ -97,13 +98,13 @@ func (s State) Equals(o State) bool {
 }
 
 // Moves returns all possible moves from the current state
-func (s State) Moves() []State {
+func (s *State) Moves() []State {
 	return []State{
-		{1 + s.Minute, s.Position}, // wait
-		{1 + s.Minute, s.Position.Add(North)},
-		{1 + s.Minute, s.Position.Add(East)},
-		{1 + s.Minute, s.Position.Add(South)},
-		{1 + s.Minute, s.Position.Add(West)},
+		{Prev: s, Minute: 1 + s.Minute, Position: s.Position}, // wait
+		{Prev: s, Minute: 1 + s.Minute, Position: s.Position.Add(North)},
+		{Prev: s, Minute: 1 + s.Minute, Position: s.Position.Add(East)},
+		{Prev: s, Minute: 1 + s.Minute, Position: s.Position.Add(South)},
+		{Prev: s, Minute: 1 + s.Minute, Position: s.Position.Add(West)},
 	}
 }
 
@@ -254,12 +255,13 @@ func solve1(valley Valley) int {
 				continue
 			}
 
-			// register the move as seen
-			seen.Add(move)
-
 			// calculate the priority of the move and insert into the priority queue
 			// the moves with the highest priority are the ones that are closest to the finish
-			q.Insert(move, current.Minute+finish.Distance(move.Position))
+			mScore := current.Minute + finish.Distance(move.Position)
+
+			// register the move as seen
+			seen.Add(move)
+			q.Upsert(move, mScore)
 		}
 	}
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -231,3 +232,37 @@ Minute 18, move down:
 #>..>2>#
 #<....>#
 ######E#`
+
+func TestValley_IsValid(t *testing.T) {
+	const data = `
+#####
+#...#
+#####`
+
+	valley, err := parse(strings.NewReader(data[1:]))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(valley.StringWhen(0))
+
+	invalidVectors := []Vector2D{
+		{X: -1, Y: 0},
+		{X: 0, Y: 1},
+		{X: 1, Y: 1},
+		{X: 1, Y: -1},
+		{X: 2, Y: -1},
+		{X: 3, Y: -1},
+		{X: 3, Y: 0},
+		{X: 3, Y: 1},
+	}
+
+	for _, v := range invalidVectors {
+		if valley.IsValid(State{
+			Position: v,
+		}) {
+			t.Errorf("Expected %v to be invalid", v)
+		}
+	}
+
+}
